@@ -12,8 +12,8 @@ import numpy as np
 from collections import defaultdict
 import Model_Data_Process
 
-# metadata, idx_input = Model_Data_Process.load_data(PATH='')
-# w2idx = metadata['w2idx']
+metadata, idx_input = Model_Data_Process.load_data(PATH='')
+w2idx = metadata['w2idx']
 UNK = 'unk'
 FILENAME = 'FineTune_Data_Jonathenlee.csv'
 limit_length = 30

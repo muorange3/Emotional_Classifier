@@ -41,18 +41,11 @@ if flag == 'USE':
     EMOTION_DIC = {0:'anger', 1:'disgust', 2:'fear', 3:'happiness', 4:'like', 5:'sadness', 6:'surprise'}
     with open('USE_metadata.pkl', 'rb') as f:
             use_metadata = pickle.load(f)
-<<<<<<< HEAD
     use_sentences = use_metadata['USE_sentences']   # Chinese Sentence
     use_idx_sentences = use_metadata['USE_input']   # to index
 
     # use_csvin = open('jay_lyrics_withEMO.csv', 'w')
     use_csvin = open(use_newFilename, 'w') 
-=======
-    use_sentences = use_metadata['USE_sentences']
-    use_idx_sentences = use_metadata['USE_input']
-
-    use_csvin = open('jay_lyrics_withEMO.csv', 'w')
->>>>>>> 63a50d5ccc360b1acd4aa42f6ce944f6e01cce16
     use_csvin_writer = csv.writer(use_csvin)
 
 """

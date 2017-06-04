@@ -12,10 +12,14 @@ import numpy as np
 from collections import defaultdict
 import Model_Data_Process
 
-# metadata, idx_input = Model_Data_Process.load_data(PATH='')
-# w2idx = metadata['w2idx']
+# for use, not fine
+metadata, idx_input = Model_Data_Process.load_data('model_metadata.pkl', 'model_idx_input.npy')
+w2idx = metadata['w2idx']
+
 UNK = 'unk'
-FILENAME = 'FineTune_Data_Jonathenlee.csv'
+# FILENAME = 'FineTune_Data_Jonathenlee.csv'
+# FILENAME = 'TEST/jay_lyrics.csv'
+FILENAME = 'TEST/'+sys.argv[1]
 limit_length = 30
 
 def read_lines(filename):
@@ -24,7 +28,7 @@ def read_lines(filename):
 		csvfile = csv.reader(csvfile)
 		sentence_list = []
 		for line in csvfile:
-			sentence_list.append(line[1])
+			sentence_list.append(line[0])       # only sentence
 	return sentence_list
 
 def segmentation_to_token(sequence):
@@ -87,7 +91,3 @@ metadata = {
 
 with open('USE_metadata.pkl', 'wb') as f:
 	pickle.dump(metadata, f)
-
-
-
-

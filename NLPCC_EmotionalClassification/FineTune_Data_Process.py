@@ -9,14 +9,21 @@ import nltk
 import itertools
 import pickle
 import numpy as np
+import Model_Data_Process
 from collections import defaultdict
 
 # ===== Files =====
 # FILENAME: Emoticons, Sentence
 # UNK: Unknown word 
-FILENAME = 'FineTune_Data_Jonathenlee.csv'
+#FILENAME = 'FineTune_Data_JonathenLee.csv'
+#FILENAME = 'FineTune_Data_Jay-1.csv'
+FILENAME = 'DATASET/finetune/'+sys.argv[1]
 METADATA = 'FineTune_metadata.pkl'
 INDEX_INPUT = 'FineTune_idx_input.npy'
+
+metadata, idx_input = Model_Data_Process.load_data('model_metadata.pkl', 'model_idx_input.npy')
+w2idx = metadata['w2idx']
+idx2w = metadata['idx2w']
 
 # anger, disgust, fear, happiness, like, sadness, surprise
 EMOTION_DIC = {'anger':0, 'disgust':1, 'fear':2, 'happiness':3, 'like':4, 'sadness':5, 'surprise':6}
@@ -24,9 +31,6 @@ FILTERED_EMO = ['fear', 'surprise']
 VOCAB_SIZE = 5000
 limit_length = 30
 UNK = 'unk'
-exp_info = dict()
-exp_info['vocab_size'] = VOCAB_SIZE
-exp_info['limit_length'] = limit_length 
 
 # ===== Conditions =====
 # forbidden_symbol: symbols not allowed in sentence
@@ -59,16 +63,19 @@ def pad_seq(seq, lookup, maxlen):
     return indices + [0]*(maxlen - len(seq))
 
 def index_token(tokens , vocab_size):
-	# get frequency distribution
+    global original_idx2w
+    # get frequency distribution
     freq_dist = nltk.FreqDist(tokens)
     # pdb.set_trace()
     # get vocabulary of 'vocab_size' most used words
-    vocab = freq_dist.most_common(vocab_size)
+    vocab = freq_dist.most_common(len(freq_dist))
     # index2word
-    index2word = ['_'] + [UNK] + [ token[0] for token in vocab ]
+    index2word = [token[0] for token in vocab ]
+    index2word += idx2w
+    index2word = list(set(index2word))      # set: no-repeat
     # word2index
-    word2index = dict([(w,i) for i,w in enumerate(index2word)] )
-    return index2word, word2index, vocab, len(freq_dist)
+    word2index = dict([(w,i) for i,w in enumerate(original_idx2w)] )
+    return original_idx2w, word2index, vocab, len(freq_dist)
 
 def zero_pad(qtokenized, w2idx, upperbound):
     # num of rows
@@ -253,14 +260,3 @@ def load_data(METADATA, INDEX_INPUT,PATH=''):
 
 if __name__ == '__main__':
     process_data()
-
-
-
-
-
-
-
-
-
-
-

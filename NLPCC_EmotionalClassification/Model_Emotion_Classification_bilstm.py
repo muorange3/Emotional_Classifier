@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.contrib import rnn
 import random
+import sys
 import collections
 import time
 import Model_Data_Process
@@ -14,8 +15,21 @@ import csv
 # >'USE'  : USE model to classify texts
 # >'TRAIN': TRAIN emotion classification model
 # >'FINETUNE': FINE TUNE the model
-flag = 'FINETUNE'
-save_model_path = 'CKPT/finetune_model'
+flag = sys.argv[1]
+restore_model = sys.argv[2]
+training_epochs = 0
+
+if flag=='USE':
+    use_newFilename = sys.argv[3]
+else:
+    # EPOCH = sys.argv[3]
+    training_epochs = int(sys.argv[3])
+
+if flag=='TRAIN':
+    save_model_path = 'CKPT/train_model'
+elif flag=='FINETUNE':
+    save_model_path = 'CKPT/finetune_model'
+
 """
 ===USE===
 EMOTION_DIC: number <-> emotion category
@@ -23,22 +37,35 @@ use_sentences: tokenized sentences
 use_idx_sentences: tokenized sentences
 use_csvin : csv file to store classification result
 """
-EMOTION_DIC = {0:'anger', 1:'disgust', 2:'fear', 3:'happiness', 4:'like', 5:'sadness', 6:'surprise'}
-with open('USE_metadata.pkl', 'rb') as f:
-        use_metadata = pickle.load(f)
-use_sentences = use_metadata['USE_sentences']
-use_idx_sentences = use_metadata['USE_input']
+if flag == 'USE':
+    EMOTION_DIC = {0:'anger', 1:'disgust', 2:'fear', 3:'happiness', 4:'like', 5:'sadness', 6:'surprise'}
+    with open('USE_metadata.pkl', 'rb') as f:
+            use_metadata = pickle.load(f)
+<<<<<<< HEAD
+    use_sentences = use_metadata['USE_sentences']   # Chinese Sentence
+    use_idx_sentences = use_metadata['USE_input']   # to index
 
-use_csvin = open('jay_lyrics_withEMO.csv', 'w')
-use_csvin_writer = csv.writer(use_csvin)
+    # use_csvin = open('jay_lyrics_withEMO.csv', 'w')
+    use_csvin = open(use_newFilename, 'w') 
+=======
+    use_sentences = use_metadata['USE_sentences']
+    use_idx_sentences = use_metadata['USE_input']
+
+    use_csvin = open('jay_lyrics_withEMO.csv', 'w')
+>>>>>>> 63a50d5ccc360b1acd4aa42f6ce944f6e01cce16
+    use_csvin_writer = csv.writer(use_csvin)
 
 """
-===TRAIN===
+===TRAIN FINETUNE===
 metadata: three list (word2index, index2words, emoticons)
 idx_input: tokenized sentences
 """
-metadata_filename = 'FineTune_metadata.pkl'
-idx_input_filename = 'FineTune_idx_input.npy'
+if flag=='TRAIN' or flag=='USE':
+    metadata_filename = 'Model_metadata.pkl'
+    idx_input_filename = 'Model_idx_input.npy'
+elif flag=='FINETUNE':
+    metadata_filename = 'Finetune_metadata.pkl'
+    idx_input_filename = 'Finetune_idx_input.npy'
 metadata, idx_input = Model_Data_Process.load_data(metadata_filename, idx_input_filename)
 
 dictionary = metadata['w2idx']
@@ -56,7 +83,7 @@ classification_number = 7
 # Parameters
 num_of_layer = 2
 learning_rate = 0.001
-training_epochs = 6
+# training_epochs = 5
 n_input = exp_info['limit_length']
 batch_size = 100
 n_hidden = 256
@@ -140,92 +167,93 @@ init = tf.global_variables_initializer()
 saver = tf.train.Saver()
 
 # Launch the graph
-if flag == 'TRAIN':
-    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
-    session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-    session.run(init)
-if flag == 'FINETUNE':
-    session = tf.Session()
-    saver.restore(session, 'ckpt/my-model-100') 
-    print("MODEL RESTORE\n")   
-number_of_epoch = 0
-print("START TRAINING")
-while number_of_epoch < training_epochs:
-    acc_total = 0
-    loss_total = 0
-    trainX_all, trainY_all = rand_batch_gen(training_data, emoticons_train)
-    testX_all, testY_all = testing_data, emoticons_test
-    num_of_sentences = float(len(trainX_all))
-    total_num_of_epochs = int(num_of_sentences//batch_size)
+if flag == 'TRAIN' or flag == 'FINETUNE':
+    if flag == 'TRAIN':
+        gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
+        session = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
+        session.run(init)
+    if flag == 'FINETUNE':
+        session = tf.Session()
+        # saver.restore(session, 'CKPT/my-model-100')         # change
+        saver.restore(session, 'CKPT/'+restore_model)
+        print("MODEL RESTORE\n")   
+    number_of_epoch = 0
+    print("START TRAINING")
+    while number_of_epoch < training_epochs:
+        acc_total = 0
+        loss_total = 0
+        trainX_all, trainY_all = rand_batch_gen(training_data, emoticons_train)
+        testX_all, testY_all = testing_data, emoticons_test
+        num_of_sentences = float(len(trainX_all))
+        total_num_of_epochs = int(num_of_sentences//batch_size)
 
-    # train
-    for number_of_batch in range(total_num_of_epochs):
-        symbols_in_keys = trainX_all[number_of_batch * batch_size : (number_of_batch+1) * (batch_size)]
-        symbols_in_keys = np.reshape(symbols_in_keys, [-1, n_input, 1])
+        # train
+        for number_of_batch in range(total_num_of_epochs):
+            symbols_in_keys = trainX_all[number_of_batch * batch_size : (number_of_batch+1) * (batch_size)]
+            symbols_in_keys = np.reshape(symbols_in_keys, [-1, n_input, 1])
 
-        symbols_out_onehot = np.zeros([batch_size, classification_number], dtype=float)
+            symbols_out_onehot = np.zeros([batch_size, classification_number], dtype=float)
+            count = 0
+            for instance in trainY_all[number_of_batch * batch_size: (number_of_batch+1) * (batch_size)]:
+                symbols_out_onehot[count][instance] = 1.0
+                count += 1
+
+            _, acc, loss, correct_portion = session.run([optimizer, accuracy, cost, correct_pred], \
+                                                    feed_dict={x: symbols_in_keys, y: symbols_out_onehot})
+            acc_total += acc
+            loss_total += loss
+            # print("num_of_batch:",number_of_batch)
+        print("=====PER EPOCH FINISHED=====")
+        print("Number_of_Epoch:", number_of_epoch)
+        print("AVGAccuracy_after_an_epoch:", float(acc_total)/float(total_num_of_epochs))
+        print("AVGLoss_after_an_epoch", float(loss_total)/float(total_num_of_epochs))
+        if float(acc_total)/float(total_num_of_epochs) > exp_info['best_acc_train']:
+            exp_info['best_acc_train'] = float(acc_total)/float(total_num_of_epochs)
+        number_of_epoch += 1
+
+        # test
+        print("-"*10 + "TEST" + "-"*10)
+        symbols_in_keys_test = np.reshape(testX_all, [-1, n_input, 1])
+        symbols_out_onehot_test = np.zeros([len(emoticons_test), classification_number], dtype=float)
         count = 0
-        for instance in trainY_all[number_of_batch * batch_size: (number_of_batch+1) * (batch_size)]:
-            symbols_out_onehot[count][instance] = 1.0
+        for instance in testY_all:
+            symbols_out_onehot_test[count][instance] = 1.0
             count += 1
-
-        _, acc, loss, correct_portion = session.run([optimizer, accuracy, cost, correct_pred], \
-                                                feed_dict={x: symbols_in_keys, y: symbols_out_onehot})
-        acc_total += acc
-        loss_total += loss
-        # print("num_of_batch:",number_of_batch)
-    print("=====PER EPOCH FINISHED=====")
-    print("Number_of_Epoch:", number_of_epoch)
-    print("AVGAccuracy_after_an_epoch:", float(acc_total)/float(total_num_of_epochs))
-    print("AVGLoss_after_an_epoch", float(loss_total)/float(total_num_of_epochs))
-    if float(acc_total)/float(total_num_of_epochs) > exp_info['best_acc_train']:
-        exp_info['best_acc_train'] = float(acc_total)/float(total_num_of_epochs)
-    number_of_epoch += 1
-
-    # test
-    print("-"*10 + "TEST" + "-"*10)
-    symbols_in_keys_test = np.reshape(testX_all, [-1, n_input, 1])
-    symbols_out_onehot_test = np.zeros([len(emoticons_test), classification_number], dtype=float)
-    count = 0
-    for instance in testY_all:
-        symbols_out_onehot_test[count][instance] = 1.0
-        count += 1
-    acc_test, loss_test = session.run( [accuracy, cost], feed_dict={x: symbols_in_keys_test, y: symbols_out_onehot_test})
-    if acc_test > exp_info['best_acc_test']:
-        exp_info['best_acc_test'] = acc_test
-    print("Accuracy:", acc_test)
-    print("Loss:", loss_test)
-    print("\n")
-saver.save(session, save_model_path, global_step=training_epochs)
-csvin_writer.writerow([time.strftime("%Y.%m.%d"),
-                       exp_info['epchs'],
-                       exp_info['limit_length'],
-                       exp_info['number_of_lines'],
-                       exp_info['num_layers'],
-                       exp_info['learning_rate'],
-                       exp_info['num_hidden_states'],
-                       exp_info['output_keep_prob'],
-                       exp_info['best_acc_train'],
-                       exp_info['best_acc_test'],
-                       note
-                       ])
-csvin.close()
-
+        acc_test, loss_test = session.run( [accuracy, cost], feed_dict={x: symbols_in_keys_test, y: symbols_out_onehot_test})
+        if acc_test > exp_info['best_acc_test']:
+            exp_info['best_acc_test'] = acc_test
+        print("Accuracy:", acc_test)
+        print("Loss:", loss_test)
+        print("\n")
+    saver.save(session, save_model_path, global_step=training_epochs)
+    csvin_writer.writerow([time.strftime("%Y.%m.%d"),
+                           exp_info['epchs'],
+                           exp_info['limit_length'],
+                           exp_info['number_of_lines'],
+                           exp_info['num_layers'],
+                           exp_info['learning_rate'],
+                           exp_info['num_hidden_states'],
+                           exp_info['output_keep_prob'],
+                           exp_info['best_acc_train'],
+                           exp_info['best_acc_test'],
+                           note
+                           ])
+    csvin.close()
 if flag == 'USE':
     saver = tf.train.Saver()
-    with tf.Session() as sess:
-        saver.restore(sess, 'ckpt/my-model-100')
+    with tf.Session() as session:
+        # saver.restore(session, 'CKPT/my-model-100')
+        saver.restore(session, 'CKPT/'+restore_model)
         print("MODEL RESTORE\n") 
         for num_line in range(len(use_sentences)):
             symbols_in_keys_use = np.reshape(use_idx_sentences[num_line], [-1, n_input, 1])
-            softmax_result_use = sess.run( [softmax_result], feed_dict={x: symbols_in_keys_use})
+            softmax_result_use = session.run( [softmax_result], feed_dict={x: symbols_in_keys_use})
             # print(type(softmax_result_use[0][0]))
-            
+
             use_csvin_writer.writerow([
                 EMOTION_DIC[softmax_result_use[0][0].argmax()],
                 ''.join(use_sentences[num_line]),
-                use_idx_sentences[num_line],
+                use_idx_sentences[num_line],            # index outcome
                 ])
 
     use_csvin.close()
-        

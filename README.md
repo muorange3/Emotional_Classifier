@@ -22,12 +22,12 @@ $ python3 Model_Emotion_Classification_bilstm.py TRAIN (train_model) (epoch)
 * Using Emotion Classification Model
 ```shell
 $ python3 USE_Data_process.py (using_csv_name)
-$ python3 Model_Emotion_Classification_bilstm.py USE (used_model) (result_csv_name) (epoch)
+$ python3 Model_Emotion_Classification_bilstm.py USE (used_model) (result_csv_name) 
 ```
 * Finetuning Emotion Classification Model 
 ```shell
 $ python3 Finetune_Data_process.py (finetuning_csv_name)
-$ python3 Model_Emotion_Classification_bilstm.py FINETUNE (original_model) 
+$ python3 Model_Emotion_Classification_bilstm.py FINETUNE (original_model) (epoch)
 ```
 * Experiment Record  
 Experiment_Record.csv  
